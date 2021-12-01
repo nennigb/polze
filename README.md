@@ -3,42 +3,39 @@ POLZE - A package to locate poles and zeros of a meromorphic function with their
 
 [![CI-ubuntu](https://github.com/nennigb/polze/actions/workflows/ci-ubuntu.yml/badge.svg)](https://github.com/nennigb/polze/actions/workflows/ci-ubuntu.yml) [![CI-Windows](https://github.com/nennigb/polze/actions/workflows/ci-windows.yml/badge.svg)](https://github.com/nennigb/polze/actions/workflows/ci-windows.yml)
 
-This python package aims at finding poles and zeros of a meromorphic function with their multiplicities 
-inside a closed contour in the complex plane. All the roots can be found without initial guess.
+This python package aims at finding poles and zeros of a meromorphic function with their multiplicities inside a closed contour in the complex plane. All the roots can be found without initial guess.
 
-For convenience we denote by `root` a pole or a zero.
-
-The method is based on the generalized argument principle :
+For convenience we denote by _root_ a pole or a zero. The method is based on the generalized argument principle :
 
 !["$$S_n = \frac{1}{2\pi i} \oint_C \frac{f'(z)}{f(z)} g_n(z) d z = \sum_{k=1}^{K} \mu_{k} g_n(z_k),$$"](doc/eq.png "The generalized argument principle")
  
 where \(C\) is a close path in the complex plane, \(\mu\) is the multiplicity and \(g_n\) is a probe function.
 The summation is done on the \(K\) zeros and poles of \(f(z)\) inside the contour.
-It is noteworthy that with this definition pole have negative multiplicity.
+It is noteworthy that with this definition poles have negative multiplicity.
 
-Theoretical development can be found in Refs. [1, 2]  and the reference therein.
+The method applies to **meromorphic** (and also to **holomorphic**) functions, **assuming there is no root on the path \(C\)**. The derivative may be 
+given or computed thanks to high-order finite difference stencil.
+
+Theoretical development can be found in Refs. [1, 2]  and the references therein.
 The approach used here is closer to [2] where the probe functions are \( g_n(z) = (z/R)^n \) and 
-use a contour splitting, whereas [1] propose to use orthogonal polynomial with respect to \(f'/f\).
+use a contour splitting, whereas [1] proposes to use orthogonal polynomial with respect to \(f'/f\).
 
 The main advantage of the contour splitting is its robustness and its simplicity, but the price to pay is the increase of the number 
-of function evaluations, since the integral need to be evaluate for each contour. The overhead appears only for significant number
+of function evaluations, since the integral need to be evaluated for each contour. The overhead appears only for significant number
 of roots (say more than 10). This bound depends on the roots distribution [2]. The ideal case is when the roots are uniformly
 distributed around the integration contour.
 
 For this kind of solver, it is generally better to increase the number of contour splits than the number of integration points.
 
-The method applies to meromorphic functions, **assuming there is no root on the path \(C\)**. The derivative may be 
-given or computed thanks to high-order finite difference stencil.
 
-
-![Examples of poles and zeros location in the complex plane.](doc/mapz_rat.png "Application to a rational fraction. The '+' and '.' markers stand for poles and zeros respectively. The grey lines shows the different contours.")
+![Examples of poles and zeros location in the complex plane.](doc/mapz_rat.png "Comparison between `polze` and brute force computation on a rational fraction. The '+' and '.' markers stand for poles and zeros respectively. The grey lines shows the different contours.")
 
 Computation steps
 -----------------
-1. Compute the `moments`
-2. Solve the generalized eigenvalue problem involving Hankel matrix [1, 2] to get the roots
-3. Solve the Vandermonde system to recover the multiplicity
-4. Remove the spurious roots. If the rank is not well determined, we get the genuine roots and some spurious ones [2]. Spurious ones have a ~0 multiplicity.
+1. Compute the _moments_
+2. Solve the _generalized eigenvalue problem_ involving Hankel matrix [1, 2] to get the roots
+3. Solve the _Vandermonde system_ to recover the multiplicity
+4. Remove the _spurious_ roots. If the rank is not well determined, we get the genuine roots and some spurious ones [2]. Spurious ones have a ~0 multiplicity.
  
 
 References
@@ -64,7 +61,7 @@ or in _editable_ mode if you want to modify the sources
 ```
 pip3 install -e path/to/polze
 ```
-Note that on some systems, `python3` or `pip3` should be use to call python v3.x
+Note that on some systems (like ubuntu), `python3` or `pip3` should be use to call python v3.x
 
 
 Runnig tests
@@ -104,20 +101,21 @@ pr, info = pz.iterative_ref()
 
 Limitations
 -----------
-For now, `polze` use only circular integration contours in z and a single kind of probe function. The contour splitting is done *a priori* using the estimate of the number of roots. No error estimators are used.
+For now, `polze` use only circular integration contours in _z_ and a single kind of probe function. The contour splitting is done _a priori_ using the estimate of the number of roots (`Npz`), ie no error estimators are used.
 
 
 Related projects
 ----------------
 [`cxroots`](https://github.com/rparini/cxroots) is a Python package for finding all the roots of a function, f(z), of a single complex variable within a given contour, C, in the complex plane.
-  This approach has he same theoretical basis than `polze` but is (now) limited to analytic functions.
+  This approach has he same theoretical basis than `polze` but is (now) limited to _analytic_ functions.
+
 
 How to contribute ?
 -------------------
 If you want to contribute to `polze`, your are welcomed! Don't hesitate to
 
   - report bugs, installation problems or ask questions on [issues](https://github.com/nennigb/polze/issues);
-  - propose some enhancements in the code or in documentation through **pull requests** (PR);
+  - propose some enhancements in the code or in the documentation through **pull requests** (PR);
   - suggest or report some possible new usages and why not start a scientific collaboration ;-)
   - ...
   

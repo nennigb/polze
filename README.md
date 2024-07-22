@@ -9,16 +9,16 @@ For convenience we denote by _root_ a pole or a zero. The method is based on the
 
 !["$$S_n = \frac{1}{2\pi i} \oint_C \frac{f'(z)}{f(z)} g_n(z) d z = \sum_{k=1}^{K} \mu_{k} g_n(z_k),$$"](doc/eq.png "The generalized argument principle")
  
-where \(C\) is a close path in the complex plane, \(\mu\) is the multiplicity and \(g_n\) is a probe function.
-The summation is done on the \(K\) zeros and poles of \(f(z)\) inside the contour.
+where $C$ is a close path in the complex plane, $\mu$ is the multiplicity and $g_n$ is a probe function.
+The summation is done on the $K$ zeros and poles of $f(z)$ inside the contour.
 It is noteworthy that with this definition poles have negative multiplicity.
 
-The method applies to **meromorphic** (and also to **holomorphic**) functions, **assuming there is no root on the path \(C\)**. The derivative may be 
+The method applies to **meromorphic** (and also to **holomorphic**) functions, **assuming there is no root on the path $C$**. The derivative may be 
 given or computed thanks to high-order finite difference stencil.
 
 Theoretical development can be found in Refs. [1, 2]  and the references therein.
-The approach used here is closer to [2] where the probe functions are \( g_n(z) = (z/R)^n \) and 
-use a contour splitting, whereas [1] proposes to use orthogonal polynomial with respect to \(f'/f\).
+The approach used here is closer to [2] where the probe functions are $g_n(z) = (z/R)^n$ and 
+use a contour splitting, whereas [1] proposes to use orthogonal polynomial with respect to $f'/f$.
 
 The main advantage of the contour splitting is its robustness and its simplicity, but the price to pay is the increase of the number 
 of function evaluations, since the integral need to be evaluated for each contour. The overhead appears only for significant number

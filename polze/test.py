@@ -24,6 +24,11 @@ import numpy as np
 import cmath
 import sys
 
+# Numpy 2.0 change default printing options making doctest failing.
+# https://numpy.org/neps/nep-0051-scalar-representation.html
+# Use legacy mode for testing
+if np.lib.NumpyVersion(np.__version__) >= '2.0.0b1':
+    np.set_printoptions(legacy="1.25")
 
 # Define a non vectorized function
 # For parallel processing we need a function defined outside the class.

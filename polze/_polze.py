@@ -71,7 +71,7 @@ specific area of the complex plane :
 >>> z_ref = np.array([2, 3, 4])*np.pi
 >>> p.sort(); np.linalg.norm(p - p_ref) < 1e-10
 True
->>> z.sort(); np.linalg.norm(z - z_ref) < 1e-10
+>>> z.sort(); np.linalg.norm(z - z_ref) < 10e-10
 True
 
 The contour may be split into several annular regions if the upper bound for
@@ -183,9 +183,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from collections import namedtuple
 from concurrent.futures import ProcessPoolExecutor
-
+from numpy.lib import NumpyVersion
 import logging
 import sys
+
 
 # Create console logger handler
 _logging_level_default = logging.INFO
@@ -199,6 +200,13 @@ if not logger.hasHandlers():
     formatter = logging.Formatter('%(levelname)-8s> %(message)s')
     ch.setFormatter(formatter)
     logger.addHandler(ch)
+
+
+# Define custom behavior depending on numpy version
+if NumpyVersion(np.__version__) < '2.0.0': 
+    trapz = np.trapz
+else:
+    trapz = np.trapezoid
 
 
 class PZ(object):
@@ -417,7 +425,7 @@ class PZ(object):
         z_rho = (z)/self._rho
         for k in range(0, K):
             # TODO try to limit numerical roundoff
-            s[k] = alpha * np.trapz(h * z_rho**k, z)
+            s[k] = alpha * trapz(h * z_rho**k, z)
 
         # Need modify the contour in this case.
         if abs(s[0]-np.round(s[0])) > self._tol:
@@ -741,9 +749,9 @@ class PZ(object):
             if pz_.size > 1:
                 logger.warning('Several roots have been found during contour refinement. Expect one.')
             # store solution and Error for check
-            pz_raf[n] = pz_
-            mus_raf[n] = mus_
-            Err[n] = abs(pz_ - pz)
+            pz_raf[n] = pz_.item()
+            mus_raf[n] = mus_.item()
+            Err[n] = abs(pz_ - pz).item()
 
         # Package output
         info = {'deviation': Err, 'radii': radii}

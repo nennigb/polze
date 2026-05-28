@@ -177,15 +177,15 @@ IIvv))?cr})^:`::,_>((!+/==/\^/\`
 |";-:.
 ```
 """
+from collections import namedtuple
+from concurrent.futures import ProcessPoolExecutor
+import logging
+import sys
 import scipy.linalg as spl
 from scipy.spatial import KDTree
 import numpy as np
 import matplotlib.pyplot as plt
-from collections import namedtuple
-from concurrent.futures import ProcessPoolExecutor
 from numpy.lib import NumpyVersion
-import logging
-import sys
 
 
 # Create console logger handler
@@ -203,13 +203,13 @@ if not logger.hasHandlers():
 
 
 # Define custom behavior depending on numpy version
-if NumpyVersion(np.__version__) < '2.0.0': 
+if NumpyVersion(np.__version__) < '2.0.0':
     trapz = np.trapz
 else:
     trapz = np.trapezoid
 
 
-class PZ(object):
+class PZ():
     """Poles-zeros solver class.
 
     Attributes
@@ -234,17 +234,28 @@ class PZ(object):
         parameters (see below).
     """
 
-    _Npz_limit = 5;       """Number of Pole and Zeros max befor splitting path"""
-    _tol = 1e-5;          """General tolerance"""
-    _clean_tol = 1e-5;    """Spurious roots multiplicity tolerance"""
-    _NR_tol = 1e-12;      """Newton Raphson tolerance"""
-    _NiterMax  = 15;       """Max number of Newton Raphson iterations"""
-    _vectorized = False;  """Vectorized function evaluation"""
-    _RiShift = 1.02;      """Scaling factor of the radius when s0 is not an integer"""
-    _zeros_only = False;  """Use 0-moment for Npz estimate"""
-    _Niter_for_int = 5;   """Max Number of iterations to estimate the moments"""
-    _parallel = False;    """Split evaluation loop in a process pool executor"""
-    _max_workers = 1;     """Number of workers in the process pool executor"""
+    _Npz_limit = 5
+    """Number of Pole and Zeros max befor splitting path"""
+    _tol = 1e-5
+    """General tolerance"""
+    _clean_tol = 1e-5
+    """Spurious roots multiplicity tolerance"""
+    _NR_tol = 1e-12
+    """Newton Raphson tolerance"""
+    _NiterMax = 15
+    """Max number of Newton Raphson iterations"""
+    _vectorized = False
+    """Vectorized function evaluation"""
+    _RiShift = 1.02
+    """Scaling factor of the radius when s0 is not an integer"""
+    _zeros_only = False
+    """Use 0-moment for Npz estimate"""
+    _Niter_for_int = 5
+    """Max Number of iterations to estimate the moments"""
+    _parallel = False
+    """Split evaluation loop in a process pool executor"""
+    _max_workers = 1
+    """Number of workers in the process pool executor"""
 
     def __init__(self, fdf, Rmax, Npz, Ni=1024, R0=0., split=0, options=None):
 
@@ -260,7 +271,7 @@ class PZ(object):
             self.df = None
 
         # dict for caching some data
-        self._h_cached = dict()
+        self._h_cached = {}
         self.Rmax = Rmax
 
         self.R0 = R0
@@ -319,7 +330,8 @@ class PZ(object):
             if self._parallel:
                 # Split the array for each worker
                 z_split = np.array_split(z, max_workers)
-                logger.debug('Parallel run with {} workers.'.format(max_workers))
+                logger.debug(
+                    f'Parallel run with {max_workers} workers.')
                 # array for storing each process output
                 fz_split = np.empty((max_workers,), dtype=object)
                 with ProcessPoolExecutor(max_workers=max_workers) as executor:
@@ -334,7 +346,8 @@ class PZ(object):
             fz = np.zeros(z.shape, dtype=complex)
             if self._parallel:
                 chunksize = z.size // max_workers
-                logger.debug('Parallel run with {} workers.'.format(max_workers))
+                logger.debug(
+                    f'Parallel run with {max_workers} workers.')
                 with ProcessPoolExecutor(max_workers=max_workers) as executor:
                     for i, fzi in enumerate(executor.map(f, z, chunksize=chunksize)):
                         fz[i] = fzi
@@ -369,11 +382,11 @@ class PZ(object):
         """
 
         # Look for cached value
-        if Ri in self._h_cached.keys():
+        if Ri in self._h_cached:
             h = self._h_cached[Ri]
             # Check only if both have the same number of integration points
             if h.size == z.size:
-                logger.debug('Used cached value for Ri ={}'.format(Ri))
+                logger.debug(f'Used cached value for Ri ={Ri}')
                 return h
         else:
             # Compute f with loop or vectorized computation
@@ -429,8 +442,8 @@ class PZ(object):
 
         # Need modify the contour in this case.
         if abs(s[0]-np.round(s[0])) > self._tol:
-            logger.info('The first moment is not an integer (Ri={}, s0={}, tol={}).'.format(Ri, s[0], self._tol)
-                  + ' Some roots may lie on the integration path or increase Ni ({}).'.format(self.Ni))
+            logger.info(f'The first moment is not an integer (Ri={Ri}, s0={s[0]}, tol={self._tol}).'
+                        + f' Some roots may lie on the integration path or increase Ni ({self.Ni}).')
             return None
         else:
             return s.copy()
@@ -498,7 +511,8 @@ class PZ(object):
                     Ri = self._RiShift*Ri
                     self._Ri[i] = Ri
                     Niter += 1
-                    logger.info('  Try new radius Ri={} (Niter={})'.format(Ri, Niter))
+                    logger.info(
+                        f'  Try new radius Ri={Ri} (Niter={Niter})')
                     if Niter > Niter_for_int:
                         raise RuntimeError(('Max number of iteration is '
                                             'reached. The moment s0 is still '
@@ -550,7 +564,8 @@ class PZ(object):
                     Ri = self._RiShift*Ri
                     self._Ri[i] = Ri
                     Niter += 1
-                    logger.info('  Try new radius Ri={} (Niter={})'.format(Ri, Niter))
+                    logger.info(
+                        f'  Try new radius Ri={Ri} (Niter={Niter})')
                     if Niter > Niter_for_int:
                         raise RuntimeError(('  Max number of iteration is '
                                             'reached. The moment s0 is still '
@@ -561,7 +576,8 @@ class PZ(object):
                 s -= self._s[i-1]
             if np.round(s[0]) > Npz:
                 # necessary but not sufficient condition, ex Np ~ Nz -> s0~0
-                raise ValueError('The Npz upperbound ({}) if not sufficient (s0={})'.format(Npz, s[0]))
+                raise ValueError(
+                    f'The Npz upperbound ({Npz}) if not sufficient (s0={s[0]})')
             # build Hankel matrix
             H = spl.hankel(s[0:Npz], s[Npz-1:2*Npz-1])
             H2 = spl.hankel(s[1:Npz+1], s[Npz:2*Npz])
@@ -574,9 +590,7 @@ class PZ(object):
                 D = D[~isinf]
                 NpzFinite = len(D)
                 logger.warning('Found inf in eig at ' +
-                               'Ri={}. Keep {} finite eigenvalue on {}.'.format(Ri,
-                                                                                NpzFinite,
-                                                                                Npz))
+                               f'Ri={Ri}. Keep {NpzFinite} finite eigenvalue on {Npz}.')
             else:
                 NpzFinite = Npz
 
@@ -627,11 +641,13 @@ class PZ(object):
         f = self.f
         if self.df is None:
             logger.info('NR requires the derivative. Use FD approximation...')
+
             def df(z):
                 """ Five order finite difference approximation of df.
                 """
                 # eps = np.finfo(float).eps
-                h = 1e-4  # good compromize with cancellation error for f~1 with O(h**4)
+                # good compromize with cancellation error for f~1 with O(h**4)
+                h = 1e-4
                 # if f has zeros at z, Taylor series converge
                 if mu_ > 0:
                     fm2, f2 = f(z-2*h), f(z+2*h)
@@ -641,7 +657,7 @@ class PZ(object):
                 else:
                     # if f has pole at z, Taylor series DO NOT converge
                     # but 1/f Taylor series does...
-                    g = lambda x: 1/f(x)
+                    def g(x): return 1/f(x)
                     gm2, g2 = g(z-2*h), g(z+2*h)
                     g1, gm1 = g(z+h), g(z-h)
                     dgz = ((gm2 - g2)/12. + (g1 - gm1)*(2./3.))/h
@@ -680,7 +696,8 @@ class PZ(object):
 
         ErrTot = np.sum(np.abs(Err))
         if (np.abs(Err) > self._NR_tol).any():
-            logger.info('Refine step finalized. Some roots have not converged. Please check `info`.')
+            logger.info(
+                'Refine step finalized. Some roots have not converged. Please check `info`.')
 
         # package output
         info = {'Err': Err, 'Niter': Niter, 'ErrTot': ErrTot}
@@ -747,7 +764,8 @@ class PZ(object):
             pz_, mus_ = pz_ref.clean()
             # Expect only one value
             if pz_.size > 1:
-                logger.warning('Several roots have been found during contour refinement. Expect one.')
+                logger.warning(
+                    'Several roots have been found during contour refinement. Expect one.')
             # store solution and Error for check
             pz_raf[n] = pz_.item()
             mus_raf[n] = mus_.item()
@@ -785,9 +803,7 @@ class PZ(object):
             dist_mult_to_int = np.abs(m[ind] - np.round(m[ind].real))
             if (dist_mult_to_int > tol).any():
                 logger.warning('Some multiplicities are far from integer ' +
-                               'at Ri={}. (Max dist = {}, tol = {}).'.format(self._Ri[i],
-                                                                             dist_mult_to_int.max(),
-                                                                             tol))
+                               f'at Ri={self._Ri[i]}. (Max dist = {dist_mult_to_int.max()}, tol = {tol}).')
             # TODO add a sort option
             pz.append(self.pz[i][ind])
             mu.append(m[ind])
@@ -812,9 +828,9 @@ class PZ(object):
         print('-----------------------------------------------------------------------------------------------------------------------------')
         for i, (p, mu) in enumerate(zip(pz, m)):
             if np.round(mu) > 0:
-                print('                                             {}    {}'.format(p, mu))
+                print(f'                                             {p}    {mu}')
             else:
-                print('{}  |                                            {}'.format(p, mu))
+                print(f'{p}  |                                            {mu}')
         print('-----------------------------------------------------------------------------------------------------------------------------')
 
     def plot(self, ax=None, variable='\\nu'):
@@ -843,8 +859,10 @@ class PZ(object):
 
         for pzi, mi in zip(pz, m):
             ind = mi.real > 0
-            ax.plot(pzi[ind].real, pzi[ind].imag, '.', color=col[col_index])  # zeros
-            ax.plot(pzi[~ind].real, pzi[~ind].imag, '+', color=col[col_index])  # poles
+            ax.plot(pzi[ind].real, pzi[ind].imag, '.',
+                    color=col[col_index])  # zeros
+            ax.plot(pzi[~ind].real, pzi[~ind].imag,
+                    '+', color=col[col_index])  # poles
             # color alternance
             col_index *= -1
 
@@ -885,7 +903,8 @@ class PZ(object):
         """
 
         if bounds is None:
-            bounds = (-self.Rmax*(1+1j) + self.R0, self.Rmax * (1+1j) + self.R0)
+            bounds = (-self.Rmax*(1+1j) + self.R0,
+                      self.Rmax * (1+1j) + self.R0)
 
         z_real, z_imag = np.meshgrid(np.linspace(bounds[0].real, bounds[1].real, NgridPoint),
                                      np.linspace(bounds[0].imag, bounds[1].imag, NgridPoint))
@@ -894,7 +913,7 @@ class PZ(object):
         FZ = self._eval(self.f, Z.ravel()).reshape(Z.shape)
 
         # plot
-        if not(ax):
+        if not ax:
             fig = plt.figure()
             ax = plt.gca()
         if part == 'modulus':

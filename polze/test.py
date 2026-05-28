@@ -19,10 +19,10 @@
 """
 import unittest
 import doctest
-import polze
-import numpy as np
 import cmath
 import sys
+import polze
+import numpy as np
 
 # Numpy 2.0 change default printing options making doctest failing.
 # https://numpy.org/neps/nep-0051-scalar-representation.html
@@ -35,7 +35,6 @@ if np.lib.NumpyVersion(np.__version__) >= '2.0.0b1':
 def f(z):
     return cmath.tan(z)           # define the function
 
-
 def df(z):
     return cmath.tan(z)**2 + 1    # and its derivative [optional]
 
@@ -44,15 +43,17 @@ def df(z):
 def f_np(z):
     return np.tan(z)
 
+
 def df_np(z):
     return np.tan(z)**2 + 1
 
+
 class TestBasic(unittest.TestCase):
-    """ Test suite.
+    """Test suite.
     """
 
     def test_non_vectorized(self):
-        """ Test with non vectorized function.
+        """Test with non vectorized function.
         """
         # Reuse a non vectorized function
         pz = polze.PZ((f, df), Rmax=5, Npz=10, Ni=1024,
@@ -69,14 +70,12 @@ class TestBasic(unittest.TestCase):
         self.assertTrue(np.linalg.norm(z - z_ref) < 1e-12)
 
     def test_iterative_ref(self):
-        """ Test iterative refinement for simple roots.
+        """Test iterative refinement for simple roots.
         """
         tol = 1e-12
         # Define a vectorized function
-        f = lambda z: np.tan(z)            # define the function
-        df = lambda z: np.tan(z)**2 + 1    # and its derivative [optional]
         # Low quality initial solution (small Ni)
-        pz = polze.PZ((f, df), Rmax=5, Npz=10, Ni=100,
+        pz = polze.PZ((f_np, df_np), Rmax=5, Npz=10, Ni=100,
                       options={'_vectorized': True,
                                '_tol': 1e-3,
                                '_NR_tol': tol})
@@ -101,15 +100,13 @@ class TestBasic(unittest.TestCase):
         self.assertFalse(np.linalg.norm(z0 - z_ref) < tol)
 
     def test_iterative_ref_no_df(self):
-        """ Test iterative refinement for simple roots without df.
+        """Test iterative refinement for simple roots without df.
         """
         tol = 1e-10
-        # Define a vectorized function
-        f = lambda z: np.tan(z)            # define the function
         # Low quality initial solution (small Ni)
         # Here we prescribe a big '_clean_tol' to avoid spurious root that
         # break the number of poles in the test
-        pz = polze.PZ(f, Rmax=5, Npz=10, Ni=100,
+        pz = polze.PZ(f_np, Rmax=5, Npz=10, Ni=100,
                       options={'_vectorized': True,
                                '_tol': 1e-3,
                                '_NR_tol': tol,
@@ -133,16 +130,13 @@ class TestBasic(unittest.TestCase):
         self.assertTrue(info['ErrTot'] < tol)
         # initial sols are not accurate enougth
         self.assertFalse(np.linalg.norm(z0 - z_ref) < tol)
-        
+
     def test_contour_ref(self):
-        """ Test contour refinement for simple roots.
+        """Test contour refinement for simple roots.
         """
         tol = 1e-12
-        # Define a vectorized function
-        f = lambda z: np.tan(z)            # define the function
-        df = lambda z: np.tan(z)**2 + 1    # and its derivative [optional]
         # Low quality initial solution (small Ni)
-        pz = polze.PZ((f, df), Rmax=5, Npz=10, Ni=100,
+        pz = polze.PZ((f_np, df_np), Rmax=5, Npz=10, Ni=100,
                       options={'_vectorized': True,
                                '_tol': 1e-3,
                                '_NR_tol': tol})
@@ -165,14 +159,11 @@ class TestBasic(unittest.TestCase):
         self.assertFalse(np.linalg.norm(z0 - z_ref) < tol)
 
     def test_with_finite_difference_on_circle(self):
-        """ Test using the finite difference on the circle for a
+        """Test using the finite difference on the circle for a
         non-vectorized function.
         """
         # Here tol bigger than when the derivative are given.
         test_tol = 1e-9
-        # define a non vectorized function
-        f = lambda z: cmath.tan(z)
-
         pz = polze.PZ(f, Rmax=5, Npz=10, Ni=1024,
                       options={'_vectorized': False})
         _ = pz.solve()
@@ -187,13 +178,13 @@ class TestBasic(unittest.TestCase):
         self.assertTrue(np.linalg.norm(z - z_ref) < test_tol)
 
     def test_zeros_only(self):
-        """ Test with function without poles.
+        """Test with function without poles.
         """
         # define a non vectorized function
-        f = lambda z: np.sin(z)            # define the function
-        df = lambda z: np.cos(z)          # and its derivative [optional]
+        def f2(z): return np.sin(z)            # define the function
+        def df2(z): return np.cos(z)          # and its derivative [optional]
         # Npz is too small and will be corrected by `estimate_Npz` method
-        pz = polze.PZ((f, df), Rmax=5, Npz=1, Ni=2048,
+        pz = polze.PZ((f2, df2), Rmax=5, Npz=1, Ni=2048,
                       options={'_zeros_only': True})
         _ = pz.solve()
         p, z = pz.dispatch()
@@ -206,7 +197,7 @@ class TestBasic(unittest.TestCase):
         self.assertTrue(np.linalg.norm(z - z_ref) < 1e-12)
 
     def test_rational_fraction(self):
-        """ Test with a rational fraction.
+        """Test with a rational fraction.
         """
         tol = 1e-10
         # Define the rational fraction
@@ -214,14 +205,14 @@ class TestBasic(unittest.TestCase):
         z_ref = np.array([1. + 0.2j, 2. - 0.3j, -1 + 0.4j, 7.])
         p_ref = np.array([.5 + 0.2j, 3 + 0.3j, -7, 5.])
 
-        def f(z):
-            """ Define the rational fraction from roots.
+        def fr(z):
+            """Define the rational fraction from roots.
             """
             n = pol.polyval(z, pol.polyfromroots(z_ref))
             d = pol.polyval(z, pol.polyfromroots(p_ref))
             return n/d
 
-        pz = polze.PZ(f, Rmax=8, Npz=10, Ni=2048)
+        pz = polze.PZ(fr, Rmax=8, Npz=10, Ni=2048)
         _ = pz.solve()
         p, z = pz.dispatch()
         z.sort()
@@ -238,14 +229,14 @@ class TestBasic(unittest.TestCase):
         z_ref = np.array([1. + 0.2j, 1. + 0.2j, -1 + 0.4j, 7.])
         p_ref = np.array([.5 + 0.2j, -7, -7, -7])
 
-        def f(z):
+        def fr(z):
             """ Define the rational fraction from roots.
             """
             n = pol.polyval(z, pol.polyfromroots(z_ref))
             d = pol.polyval(z, pol.polyfromroots(p_ref))
             return n/d
 
-        pz = polze.PZ(f, Rmax=8, Npz=10, Ni=2048)
+        pz = polze.PZ(fr, Rmax=8, Npz=10, Ni=2048)
         _ = pz.solve()
         (p, pm), (z, zm) = pz.dispatch(multiplicities=True)
         z.sort()
@@ -278,7 +269,6 @@ class TestBasic(unittest.TestCase):
         z.sort()
         self.assertTrue(np.linalg.norm(z - z_ref) < 1e-12)
 
-
     def test_parallel_vectorized(self):
         """ Test accuracy with parallel execution with vectorized (numpy) func.
 
@@ -308,7 +298,7 @@ if __name__ == '__main__':
     suite = loadTestsFromTestCase(TestBasic)
     # Add doctest from _polze module
     suite.addTest(doctest.DocTestSuite(polze._polze,
-                                       optionflags=(doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE)))
+                                       optionflags=doctest.ELLIPSIS | doctest.NORMALIZE_WHITESPACE))
     # define the runner
     runner = unittest.TextTestRunner(verbosity=3)
     # run all the suite

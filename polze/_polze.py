@@ -232,6 +232,12 @@ class PZ():
     options : dict
         Overwrite defaut parameters. The keys should be taken in the defaut
         parameters (see below).
+    status : dict
+        Returns the status of the computation. The dictionnay contains the
+        number of warning encountered sorted by category. 
+        The keys are {`multiplicities`, `oo-eig`}.
+        The default values are 0 (no warning). It could be usefull to monitor
+        batch computation.
     """
 
     _Npz_limit = 5
@@ -269,6 +275,8 @@ class PZ():
         except:
             self.f = fdf
             self.df = None
+        # Create a status dict for error and warning report
+        self.status = {'multiplicities': 0, 'oo-eig': 0}
 
         # dict for caching some data
         self._h_cached = {}
@@ -591,6 +599,7 @@ class PZ():
                 NpzFinite = len(D)
                 logger.warning('Found inf in eig at ' +
                                f'Ri={Ri}. Keep {NpzFinite} finite eigenvalue on {Npz}.')
+                self.status['oo-eig'] += 1
             else:
                 NpzFinite = Npz
 
@@ -804,6 +813,7 @@ class PZ():
             if (dist_mult_to_int > tol).any():
                 logger.warning('Some multiplicities are far from integer ' +
                                f'at Ri={self._Ri[i]}. (Max dist = {dist_mult_to_int.max()}, tol = {tol}).')
+                self.status['multiplicities'] += 1
             # TODO add a sort option
             pz.append(self.pz[i][ind])
             mu.append(m[ind])
